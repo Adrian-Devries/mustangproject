@@ -9,7 +9,7 @@ import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.mustangproject.*;
-import org.mustangproject.Exceptions.ArithmetricException;
+import org.mustangproject.Exceptions.ArithmeticException;
 import org.mustangproject.Exceptions.StructureException;
 import org.mustangproject.util.NodeMap;
 import org.slf4j.Logger;
@@ -964,7 +964,7 @@ public class ZUGFeRDInvoiceImporter {
 							.collect(Collectors.joining(" + "));
 					} catch (Exception ignored) {
 					}
-					throw new ArithmetricException("Payable total in XML is " + payableTotalFromXml + ", but calculated total is " + calculatedPayableTotal + moreDetails);
+					throw new ArithmeticException("Payable total in XML is " + payableTotalFromXml + ", but calculated total is " + calculatedPayableTotal + moreDetails);
 				}
 			}
 		}
