@@ -99,6 +99,7 @@ public class Main {
 			+ "                [--source <filename>]: set input XML file\n"
 			+ "                [--out <filename>]: set output HTML file\n"
 			+ "        --action pdf  convert XML to PDF \n"
+			+ "                [--language <lang>]: set output lang (en, fr or de)\n"
 			+ "                [--source <filename>]: set input XML file\n"
 			+ "                [--out <filename>]: set output PDF file\n"
 			;
@@ -111,14 +112,14 @@ public class Main {
 	}
 
 	/**
-	 * Asks the user (repeatedly, if neccessary) on the command line for a String
+	 * Asks the user (repeatedly, if necessary) on the command line for a String
 	 * (offering a defaultValue) conforming to a Regex pattern
 	 *
 	 * @param prompt       the question to be asked to the user
 	 * @param defaultValue the default return value if user hits enter
 	 * @param pattern      a regex of acceptable values
 	 * @return the user answer conforming to pattern
-	 * @throws Exception if pattern not compielable or IOexception on input
+	 * @throws Exception if pattern not compilable or IOException on input
 	 */
 	protected static String getStringFromUser(String prompt, String defaultValue, String pattern) throws Exception {
 		String input = "";
@@ -710,7 +711,7 @@ public class Main {
 					throw new Exception(String.format("Unknown ZUGFeRD profile '%s'", zfProfile));
 				}
 			} else {
-				throw new Exception(String.format("Unknown version '%i'", zfIntVersion));
+				throw new Exception(String.format("Unknown version '%d'", zfIntVersion));
 			}
 
 			IZUGFeRDExporter ze = null;
@@ -814,11 +815,15 @@ public class Main {
 					lang = getStringFromUser("Output language", "en", "en|de|fr");
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(), e);
+					lang = "en";
 				}
-			} else {
-				System.out.println("Output language set to " + lang);
+			}
+		} else {
+			if (lang == null) {
+				lang = "en";
 			}
 		}
+		System.out.println("Output language set to " + lang);
 
 		if (outName == null) {
 			String defaultFilename = "factur-x.html";
@@ -836,8 +841,6 @@ public class Main {
 		try {
 			ensureFileExists(sourceName);
 			ensureFileNotExists(outName);
-
-			// stylesheets/ZUGFeRD_1p0_c1p0_s1p0.xslt
 		} catch (IOException e) {
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -845,70 +848,76 @@ public class Main {
 		ZUGFeRDVisualizer zvi = new ZUGFeRDVisualizer();
 		String xml = null;
 		try {
+			ZUGFeRDVisualizer.Language langCode = getLanguage(lang);
 			if (!intoPDF) {
-				ZUGFeRDVisualizer.Language langCode = ZUGFeRDVisualizer.Language.EN;
-				if (lang.equalsIgnoreCase("de")) {
-					langCode = ZUGFeRDVisualizer.Language.DE;
-				}
-				if (lang.equalsIgnoreCase("fr")) {
-					langCode = ZUGFeRDVisualizer.Language.FR;
-				}
 				xml = zvi.visualize(sourceName, langCode);
 				Files.write(Paths.get(outName), xml.getBytes());
 			} else {
-				zvi.toPDF(sourceName, outName);
+				zvi.toPDF(sourceName, outName, langCode);
 			}
+			System.out.println("Written to " + outName);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 			System.err.println(e.getMessage());
 		}
-		System.out.println("Written to " + outName);
 
+		// The following is not needed anymore:
+		/*
 		if (!intoPDF) {
-
 			try {
-				ExportResource("/xrechnung-viewer.css");
-				ExportResource("/xrechnung-viewer.js");
-
-				System.out.println("xrechnung-viewer.css and xrechnung-viewer.js written as well (to local working dir)");
+				ExportResource("xrechnung-viewer.css");
+				ExportResource("xrechnung-viewer.js");
+				ExportResource("FileSaver-v2.0.5.js");
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(), e);
 			}
 		}
+		 */
+	}
 
-
+	private static ZUGFeRDVisualizer.Language getLanguage(final String s) {
+		ZUGFeRDVisualizer.Language rv = ZUGFeRDVisualizer.Language.EN;
+		if (s != null && !s.isEmpty()) {
+			if (s.equalsIgnoreCase("de")) {
+				rv = ZUGFeRDVisualizer.Language.DE;
+			}
+			if (s.equalsIgnoreCase("fr")) {
+				rv = ZUGFeRDVisualizer.Language.FR;
+			}
+		}
+		return rv;
 	}
 
 	/**
 	 * Export a resource embedded into a Jar file to the local file path.
 	 *
 	 * @param resourceName ie.: "/SmartLibrary.dll"
-	 * @return The path to the exported resource
 	 * @throws Exception e.g. if the specified resource does not exist at the specified location
 	 */
-	static public String ExportResource(String resourceName) throws Exception {
-		String jarFolder;
-		try (InputStream stream = Main.class.getResourceAsStream(resourceName)) {//note that each / is a directory down in the "jar tree" been the jar the root of the tree
-			if (stream == null) {
-				throw new Exception("Cannot get resource \"" + resourceName + "\" from Jar file.");
-			}
-
-			int readBytes;
-			byte[] buffer = new byte[4096];
-			jarFolder = System.getProperty("user.dir");
-			try (FileOutputStream resStreamOut = new FileOutputStream(jarFolder + resourceName)) {
-  			while ((readBytes = stream.read(buffer)) > 0) {
-  				resStreamOut.write(buffer, 0, readBytes);
-  			}
+	@SuppressWarnings("unused")
+    public static void ExportResource(final String resourceName) throws Exception {
+		String resourcePath = ZUGFeRDVisualizer.MAIN_BASE_PATH + resourceName;
+		try (InputStream is = Main.class.getClassLoader().getResourceAsStream(resourcePath)) {
+			// note that each / is a directory down in the "jar tree" been the jar the root of the tree
+			if (is != null) {
+				int readBytes;
+				byte[] buffer = new byte[4096];
+				String jarFolder = System.getProperty("user.dir");
+				try (FileOutputStream fos = new FileOutputStream(jarFolder + resourceName)) {
+					while ((readBytes = is.read(buffer)) > 0) {
+						fos.write(buffer, 0, readBytes);
+					}
+				}
+			} else {
+				throw new Exception(String.format("Cannot get resource '%s' from JAR file.", resourceName));
 			}
 		}
-
-		return jarFolder + resourceName;
+		System.out.printf("'%s' written (to local working directory).%n", resourceName);
 	}
 
 	private static void ensureFileExists(String fileName) throws IOException {
 		if (!fileExists(fileName)) {
-			throw new IOException(String.format("File %s does not exists", fileName));
+			throw new IOException(String.format("File %s does not exist.", fileName));
 		}
 	}
 
