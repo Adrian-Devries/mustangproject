@@ -296,7 +296,7 @@ public class PDFValidator extends Validator {
 		for (final String filename : additionalData.keySet()) {
 			// validating xml in byte[]	additionalData.get(filename)
 			LOGGER.info("validating additionalData " + filename);
-			validateSchema(additionalData.get(filename), "ad/basic/additional_data_base_schema.xsd", 2, EPart.pdf);
+			validateSchema(additionalData.get(filename), "logistics_invoice_0.1/additional_data_base_schema.xsd", 2, EPart.pdf); // schemaPath adapted to new structure
 		}
 
 

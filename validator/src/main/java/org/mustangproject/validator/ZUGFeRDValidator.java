@@ -211,6 +211,7 @@ public class ZUGFeRDValidator {
 	 * @return a xml string with the validation result
 	 */
 	public String validate(String filename) {
+		LOGGER.debug("public String validate(String filename='{}')", filename);
 		String contextFilename;
 		InputStream inputStream;
 		long inputLength;

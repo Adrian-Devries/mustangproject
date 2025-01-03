@@ -57,7 +57,13 @@ public abstract class Validator {
 	 * @throws IrrecoverableValidationError when any fatal errors arise, e.g. when the source file can not be found
 	 */
 	protected void validateSchema(byte[] xmlRawData, String schemaPath, int section, EPart part) throws IrrecoverableValidationError {
-		URL schemaFile = Thread.currentThread().getContextClassLoader().getResource("schema/" + schemaPath);
+		LOGGER.info(
+				"protected void validateSchema(byte[] xmlRawData, String schemaPath='{}', int section={}, EPart part={})",
+				schemaPath,
+				section,
+				part
+		);
+		URL schemaFile = Thread.currentThread().getContextClassLoader().getResource(schemaPath); // Prefix "schema/" not needed anymore.
 		Source xmlData = new StreamSource(new ByteArrayInputStream(xmlRawData));
 		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		try {
